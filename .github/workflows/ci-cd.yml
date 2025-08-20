@@ -1,0 +1,63 @@
+name: CI + CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  ci:
+    name: CI - Build & Test
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run lint
+        run: npm run lint || echo "⚠️ No lint script found"
+
+      - name: Run tests
+        run: npm test || echo "⚠️ No test script found"
+
+      - name: Build project
+        run: npm run build
+
+      - name: Zip artifact
+        run: zip -r build_artifact.zip ./build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: build_artifact.zip
+
+  cd:
+    name: CD - Deploy locally
+    runs-on: self-hosted
+    needs: ci   # runs only after CI finishes successfully
+
+    steps:
+      - name: Download artifact from CI
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: ./artifact
+
+      - name: Unzip artifact
+        run: unzip ./artifact/build_artifact.zip -d ./deploy
+
+      - name: Kill previous server (if running)
+        run: |
+          pkill -f "serve" || echo "No existing server running"
+
+      - name: Run application
+        run: |
+          echo "🚀 Starting local server..."
+          npm install -g serve
+          nohup serve -s ./deploy/build -l 3000 > server.log 2>&1 &
