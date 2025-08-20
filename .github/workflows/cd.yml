@@ -1,0 +1,30 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]   # run after CI completes
+    types:
+      - completed
+
+jobs:
+  deploy:
+    name: Deploy locally
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Download artifact from CI
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: ./artifact
+
+      - name: Unzip artifact
+        run: |
+          unzip ./artifact/build_artifact.zip -d ./deploy
+
+      - name: Run application
+        run: |
+          echo "🚀 Starting local server..."
+          npm install -g serve
+          nohup serve -s ./deploy/build -l 3000 > server.log 2>&1 &
