@@ -1,0 +1,4 @@
+[phases]
+build = {}
+install = { command = "npm ci" }
+start = { command = "npx serve -s build -l $PORT" }

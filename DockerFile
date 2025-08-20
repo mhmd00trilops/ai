@@ -1,0 +1,26 @@
+# Use a small Node image
+FROM node:18-alpine
+
+# Create app directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json for dependencies
+COPY package*.json ./
+
+# Install dependencies (mostly for serve)
+RUN npm install
+
+# Copy all project files
+COPY . .
+
+# Make sure the build folder exists (you have it locally)
+# If you want to build inside container, replace below with `RUN npm run build`
+
+# Install serve globally
+RUN npm install -g serve
+
+# Expose port 8080 (Railway default)
+EXPOSE 8080
+
+# Start the React app
+CMD ["serve", "-s", "build", "-l", "8080"]
